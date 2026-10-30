@@ -495,9 +495,9 @@ let save={met:[],spots:{},carry:[],friends:[],farm:{nests:[],basket:[],pen:[]}};
 try{const s=JSON.parse(store.get('dv-save')||'null');if(s&&Array.isArray(s.met))save=Object.assign(save,s)}catch(e){}
 if(save.delivered&&!save.migrated){for(let i=0;i<save.delivered;i++)save.farm.pen.push({k:'maia',food:0});save.migrated=1}
 const persist=()=>store.set('dv-save',JSON.stringify(save));
-const SPOTS=[{x:420,k:'maia'},{x:1040,k:'trike'},{x:1450,k:'para'},{x:2050,k:'brachio'},{x:2250,k:'stego'},{x:2880,k:'spino'},{x:3180,k:'ankylo'},{x:3700,k:'raptor'},{x:4120,k:'ptera'},{x:4600,k:'trex'},{x:5100,k:'raptor'},{x:5480,k:'ptera'}];
-const EGGC={maia:['#ddd2b8','#6a5a3a'],trike:['#d2cab2','#4a4030'],para:['#e2d4b8','#7a4a2a'],brachio:['#dcd6c8','#5a5a5a'],stego:['#d8d2aa','#6a6a3a'],spino:['#cbd0c2','#3a4a40'],ankylo:['#cfbd9c','#5a4430'],raptor:['#a8c2ba','#3a5048'],ptera:['#e4dace','#8a6a5a'],trex:['#cdc1aa','#5a4030']};
-const DSHORT={maia:'Maiasaura',trike:'Triceratops',para:'Parasaurolophus',brachio:'Brachiosaurus',stego:'Stegosaurus',spino:'Spinosaurus',ankylo:'Ankylosaurus',raptor:'Velociraptor',ptera:'Pteranodon',trex:'T. rex'};
+const SPOTS=[{x:420,k:'maia'},{x:1040,k:'trike'},{x:1450,k:'para'},{x:2050,k:'brachio'},{x:2250,k:'stego'},{x:2880,k:'spino'},{x:3180,k:'ankylo'},{x:3700,k:'raptor'},{x:4120,k:'ptera'},{x:4600,k:'trex'},{x:5100,k:'raptor'},{x:5480,k:'ptera'},{x:5600,k:'mosa'}];
+const EGGC={maia:['#ddd2b8','#6a5a3a'],trike:['#d2cab2','#4a4030'],para:['#e2d4b8','#7a4a2a'],brachio:['#dcd6c8','#5a5a5a'],stego:['#d8d2aa','#6a6a3a'],spino:['#cbd0c2','#3a4a40'],ankylo:['#cfbd9c','#5a4430'],raptor:['#a8c2ba','#3a5048'],ptera:['#e4dace','#8a6a5a'],trex:['#cdc1aa','#5a4030'],mosa:['#bfe0ea','#1f4f7a']};
+const DSHORT={maia:'Maiasaura',trike:'Triceratops',para:'Parasaurolophus',brachio:'Brachiosaurus',stego:'Stegosaurus',spino:'Spinosaurus',ankylo:'Ankylosaurus',raptor:'Velociraptor',ptera:'Pteranodon',trex:'T. rex',mosa:'Mosasaurus'};
 const RESPAWN=60000,eggReady=e=>!(save.spots[e.i]&&Date.now()-save.spots[e.i]<RESPAWN);
 const FRIEND_X=[360,820,1250,1620,2120,2380,2950,3420,3800,4320,4560,5000,5380,5620];
 
@@ -685,7 +685,7 @@ const ZDIST=[
   {d:.5,w:{rock:.52,cycad:.2,conifer:.12,broad:.05,fern:.11}},
   {d:.42,w:{rock:.52,dead:.34,fern:.14}},
   {d:.24,w:{palm:.58,rock:.24,cycad:.18}}];
-const AVOID=[[FARM[0],FARM[1],34],[NEST3[0],NEST3[1],9],[SPAWN[0],SPAWN[1],8],[0,BR_Z,14]];
+const AVOID=[[FARM[0],FARM[1],34],[NEST3[0],NEST3[1],9],[SPAWN[0],SPAWN[1],8],[0,BR_Z,14],[141,-30,9]];
 function clearSpot(x,z,r){for(const [ax,az,ar] of AVOID)if(Math.hypot(x-ax,z-az)<ar+r)return false;return true}
 const PLACED={},VEGCH=[];Object.keys(TREES).forEach(k=>PLACED[k]=[]);
 (function placeVeg(){seed=2024;
@@ -994,9 +994,20 @@ function eggMat(k){if(EGGM[k])return EGGM[k];const C=EGGC[k]||EGGC.maia,t=sprite
   return EGGM[k]=new THREE.MeshStandardMaterial({map:t,roughness:.42})}
 const carryM=[0,1,2,3,4,5].map(()=>{const m=new THREE.Mesh(EGGGEO,eggMat('maia'));m.scale.set(.22,.29,.22);m.visible=false;scene.add(m);return m});
 (function nestEggs(){[[-.5,0],[.5,.1],[0,-.5]].forEach(([dx,dz])=>{const m=new THREE.Mesh(EGGGEO,eggMat('maia'));m.scale.set(.3,.4,.3);m.position.set(NEST3[0]+dx,NESTY+.45,NEST3[1]+dz);m.castShadow=true;scene.add(m)})})();
-const EGG3=[[10,118],[-30,44],[-94,82],[-98,-76],[78,98],[-44,null],[110,-60],[72,-4],[122,-84],[-22,-134],[112,34],[148,62]];
+const EGG3=[[10,118],[-30,44],[-94,82],[-98,-76],[78,98],[-44,null],[110,-60],[72,-4],[122,-84],[-22,-134],[112,34],[148,62],[144,-30]];
 const eggs3=SPOTS.map((s,i)=>{let [x,z]=EGG3[i];if(z==null)z=riverZ(x)+15;const m=new THREE.Mesh(EGGGEO,eggMat(s.k));m.scale.set(.3,.4,.3);m.castShadow=true;scene.add(m);
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xfff2b0,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(sp);return{i,k:s.k,x,z,y:heightAt(x,z),m,sp}});
+(function hollowTree(){const e=eggs3[12];if(!e)return;const x=e.x,z=e.z,y=e.y,g=new THREE.Group();g.position.set(x,y-.3,z);
+  const mt=new THREE.MeshLambertMaterial({color:0x6e5038,map:barkTex,side:THREE.DoubleSide}),gap=1.5,ts=Math.PI*1.5+gap/2;
+  const low=new THREE.Mesh(new THREE.CylinderGeometry(1.75,2.1,2.9,20,1,true,ts,TAU-gap),mt);low.position.y=1.45;g.add(low);
+  const inner=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.85,2.9,20,1,true,ts,TAU-gap),new THREE.MeshLambertMaterial({color:0x2a1c12,side:THREE.DoubleSide}));inner.position.y=1.45;g.add(inner);
+  const up=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.75,6,16),matTrunk);up.position.y=5.9;g.add(up);
+  const cap=new THREE.Mesh(new THREE.CircleGeometry(1.6,16).rotateX(Math.PI/2),new THREE.MeshLambertMaterial({color:0x1a120c}));cap.position.y=2.88;g.add(cap);
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(1.6,16).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:0xc9a24a}));floor.position.y=.34;g.add(floor);
+  [[1.2,9.2,.9,-.6],[-1.4,9,-.7,.7],[0,10.4,0,0]].forEach(([bx,by,rz,rx])=>{const br=new THREE.Mesh(new THREE.CylinderGeometry(.25,.5,4,8),matTrunk);br.position.set(bx*.8,by-1.4,0);br.rotation.set(rx,0,rz);g.add(br)});
+  [[0,11,0,3.4],[2.4,10,.8,2.6],[-2.3,10.2,-.6,2.7],[.6,10.4,2.3,2.4],[-.5,10,-2.3,2.5],[0,12.6,0,2.4]].forEach(([lx,ly,lz,r])=>{const l=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),matLeaf);l.position.set(lx,ly,lz);l.castShadow=true;g.add(l)});
+  g.traverse(o=>{if(o.isMesh&&o!==floor&&o!==cap){o.castShadow=true;o.receiveShadow=true}});scene.add(g);
+})();
 const FRIEND3=[[-14,96],[52,64],[-70,40],[-130,-10],[-40,-6],[30,-40],[70,-10],[120,-60],[-90,-100],[10,-100],[140,10],[150,80],[-150,110],[95,120]];
 let friends=[];
 function buildFriends(){friends.forEach(f=>{scene.remove(f.b.m);scene.remove(f.b.sh);scene.remove(f.bub)});
@@ -1073,7 +1084,7 @@ function update(dt){T+=dt;tod=(tod+dt/300)%1;if(frameN%300===0)store.set('dv-tod
   const zl=timeIcon()+' '+ZNAMES[zn];if(zl!==zoneLabel){zoneLabel=zl;$('zName').textContent=zl}
   dinoTick(dt);
   eggs3.forEach(e=>{if(!eggReady(e))return;if(Math.hypot(e.x-Pl.x,e.z-Pl.z)<1.7&&Math.abs(Pl.y-e.y)<2.5){save.spots[e.i]=Date.now();save.carry.push(e.k);persist();sfx.egg();sparkle(e.x,e.y+.5,e.z,16);
-    banner={t:2.6,text:'You found a '+DSHORT[e.k]+' egg!',sub:'Take it to your Dino Farm to hatch it'}}});
+    banner=e.k==='mosa'?{t:3.4,text:'You found the Mosasaurus egg!',sub:'A rare sea egg! Take it to your Dino Farm'}:{t:2.6,text:'You found a '+DSHORT[e.k]+' egg!',sub:'Take it to your Dino Farm to hatch it'}}});
   friends.forEach(f=>{if(f.joined)return;f.wave+=dt;if(Math.hypot(f.x-Pl.x,f.z-Pl.z)<2.3){f.joined=true;if(!save.friends.includes(f.p)){save.friends.push(f.p);persist()}sfx.friend();sparkle(f.x,f.y+1,f.z,18,0x9dffb8);
     banner={t:2.2,text:label(PILOTS[f.p])+' joined you!',sub:`${save.friends.length}/14 friends exploring together`}}});
   nearFarm=Math.hypot(Pl.x-FARM[0],Pl.z-(FARM[1]-5))<10;
@@ -1168,9 +1179,12 @@ function drawScene(){skyLayer();X.clearRect(0,0,W,H);
   mountains(.06,190,520,60,['#6a7890','#8a96a8'],.55);volcano();mountains(.14,130,300,10,['#4e5a50','#6a7464'],.38);midTrees();worldLayer();lighting();
   cx.drawImage(scC,0,0,W,H);glows();drawBanner()}
 // ---------- Dino Farm ----------
-const DIET={maia:'leaf',trike:'leaf',para:'leaf',brachio:'leaf',stego:'leaf',ankylo:'leaf',spino:'fish',ptera:'fish',raptor:'meat',trex:'meat'};
+const DIET={maia:'leaf',trike:'leaf',para:'leaf',brachio:'leaf',stego:'leaf',ankylo:'leaf',spino:'fish',ptera:'fish',raptor:'meat',trex:'meat',mosa:'fish'};
 const FOODNAME={leaf:'leaves',fish:'fish',meat:'a meaty snack'};
-const SZ={maia:1,trike:.95,para:1,brachio:1.35,stego:.95,spino:1.1,ankylo:.8,raptor:.75,ptera:.9,trex:1.2};
+const SZ={maia:1,trike:.95,para:1,brachio:1.35,stego:.95,spino:1.1,ankylo:.8,raptor:.75,ptera:.9,trex:1.2,mosa:1};
+function pond(L){const p=L.pen;return{x:p.x+p.w*.73,y:p.y+p.h*.72,rx:p.w*.22,ry:p.h*.17}}
+function inPond(x,y,P,k){return((x-P.x)/(P.rx*k))**2+((y-P.y)/(P.ry*k))**2<1}
+function mosaS(b,L){const f=(b.ref?b.ref.food:b.food)||0,P=pond(L),bb=bnd('mosa');return P.rx*(1.1+.12*Math.min(f,GROWN))/(bb[1]-bb[0])}
 const HATCH_MS=40000,GROWN=5,NESTS=6;
 let FB=[],fParts=[],fFly=[],fWob={};
 function farmProg(n){return clamp((Date.now()-n.start)/HATCH_MS+n.taps*.07,0,1)}
@@ -1180,8 +1194,8 @@ function farmLayout(){const cs=getComputedStyle(document.documentElement),pt=par
   if(W>=720){const hw=Math.min(400,W*.4);return{hatch:{x:16,y:top,w:hw,h:Math.min(bot-top,420)},pen:{x:hw+40,y:top+40,w:W-hw-56,h:bot-top-40}}}
   const hh=clamp((bot-top)*.4,190,280);return{hatch:{x:12,y:top,w:W-24,h:hh},pen:{x:12,y:top+hh+14,w:W-24,h:bot-top-hh-14}}}
 function nestPos(i,L){const h=L.hatch,col=i%3,row=Math.floor(i/3);return{x:h.x+h.w*(col+.5)/3,y:h.y+h.h*(.5+row*.3),r:Math.min(h.w/3,h.h*.32)*.42}}
-function babyH(b,L){const f=(b.ref?b.ref.food:b.food)||0;return Math.min(L.pen.h*.75,L.pen.h*(.2+.04*Math.min(f,GROWN))*(SZ[b.k]||1))}
-function syncBabies(L){const F=save.farm;while(FB.length<F.pen.length){const i=FB.length,b=F.pen[i];FB.push({ref:b,k:b.k,x:L.pen.x+rnd(.2,.8)*L.pen.w,y:L.pen.y+rnd(.4,.95)*L.pen.h,dir:1,t:Math.random()*9,tx:0,ty:0,wait:0,cool:0,happy:0})}}
+function babyH(b,L){if(b.k==='mosa')return mosaS(b,L)*(-bnd('mosa')[2])*1.8;const f=(b.ref?b.ref.food:b.food)||0;return Math.min(L.pen.h*.75,L.pen.h*(.2+.04*Math.min(f,GROWN))*(SZ[b.k]||1))}
+function syncBabies(L){const F=save.farm;while(FB.length<F.pen.length){const i=FB.length,b=F.pen[i];FB.push({ref:b,k:b.k,x:L.pen.x+rnd(.2,.8)*L.pen.w,y:L.pen.y+rnd(.4,.95)*L.pen.h,dir:1,t:Math.random()*9,tx:0,ty:0,wait:0,cool:0,happy:0});const nb=FB[FB.length-1];if(nb.k==='mosa'){const P=pond(L);nb.x=P.x;nb.y=P.y}}}
 function openFarm(){if(state!=='play')return;ac();const n=save.carry.length;
   save.farm.basket.push(...save.carry);save.carry.length=0;fillNests();persist();
   state='farm';['hud','ctrl','hi'].forEach(i=>show(i,0));show('farmUi',1);show('farmTop',1);FB=[];fParts=[];fFly=[];
@@ -1192,15 +1206,15 @@ function farmTexts(){const F=save.farm,eggsN=F.nests.length+F.basket.length;
   $('fCount').textContent=`🥚 ${eggsN} · 🦕 ${F.pen.length}`;
   $('fTip').textContent=eggsN?'Tap the eggs to keep them warm and help them hatch faster.':F.pen.length?'Tap a baby to feed it. Five meals and it grows up!':'No eggs yet. Find them in the valley and bring them here!'}
 function hatchNest(i,L){const F=save.farm,n=F.nests[i],p=nestPos(i,L);F.nests.splice(i,1);const b={k:n.k,food:0};F.pen.push(b);fillNests();persist();
-  syncBabies(L);const fb=FB[FB.length-1];fb.x=clamp(p.x,L.pen.x+30,L.pen.x+L.pen.w-30);fb.y=L.pen.y+L.pen.h*.55;fb.happy=2;
+  syncBabies(L);const fb=FB[FB.length-1];fb.x=clamp(p.x,L.pen.x+30,L.pen.x+L.pen.w-30);fb.y=L.pen.y+L.pen.h*.55;fb.happy=2;if(n.k==='mosa'){const P=pond(L);fb.x=P.x;fb.y=P.y}
   for(let j=0;j<26;j++)fParts.push({x:p.x,y:p.y,vx:rnd(-160,160),vy:rnd(-260,-60),l:1.2,ml:1.2,c:[EGGC[n.k][0],EGGC[n.k][1],'#ffe066'][j%3]});
-  sfx.hatch();banner={t:3,text:'A baby '+DSHORT[n.k]+' hatched!',sub:'Tap it to give it '+FOODNAME[DIET[n.k]]};farmTexts();updateCounts()}
+  sfx.hatch();banner={t:3,text:'A baby '+DSHORT[n.k]+' hatched!',sub:n.k==='mosa'?'It loves to swim in the pond. Tap it to give it fish!':'Tap it to give it '+FOODNAME[DIET[n.k]]};farmTexts();updateCounts()}
 function feed(b,L){if(b.cool>0)return;b.cool=1.1;const bx=L.pen.x+L.pen.w-34,by=L.pen.y+26;
   fFly.push({x:bx,y:by,tx:b.x,ty:b.y-babyH(b,L)*.6,t:0,kind:DIET[b.k],b})}
 function farmTap(x,y){const L=farmLayout(),F=save.farm;
   for(let i=0;i<F.nests.length;i++){const p=nestPos(i,L);if(Math.hypot(x-p.x,y-p.y)<p.r*1.6){const n=F.nests[i];n.taps++;fWob[i]=.4;persist();ac();tone(500+farmProg(n)*500,.12,'triangle',.05);
     for(let j=0;j<5;j++)fParts.push({x:p.x+rnd(-p.r,p.r),y:p.y-p.r,vx:rnd(-30,30),vy:rnd(-90,-40),l:.7,ml:.7,c:'#ffb23f'});return}}
-  for(let i=FB.length-1;i>=0;i--){const b=FB[i],h=babyH(b,L),w=h*1.4;if(Math.abs(x-b.x)<w/2&&y<b.y+8&&y>b.y-h*1.1){feed(b,L);return}}}
+  for(let i=FB.length-1;i>=0;i--){const b=FB[i],h=babyH(b,L),w=b.k==='mosa'?20+mosaS(b,L)*(bnd('mosa')[1]-bnd('mosa')[0]):h*1.4;if(Math.abs(x-b.x)<w/2&&y<b.y+8&&y>b.y-h*1.1){feed(b,L);return}}}
 function drawFood(c,kind,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
   if(kind==='leaf'){E(c,0,0,14,8,-.5,'#5aa846',DK);c.strokeStyle=DK;c.lineWidth=1.5;c.beginPath();c.moveTo(-10,6);c.lineTo(10,-6);c.stroke()}
   else if(kind==='fish'){P(c,'#5fb0e0',DK,()=>{c.moveTo(14,0);c.quadraticCurveTo(0,-10,-10,0);c.quadraticCurveTo(0,10,14,0)});P(c,'#5fb0e0',DK,()=>{c.moveTo(-8,0);c.lineTo(-18,-8);c.lineTo(-18,8)});E(c,8,-2,1.8,1.8,0,DK)}
@@ -1209,12 +1223,12 @@ function drawFood(c,kind,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
 function updateFarm(dt){const L=farmLayout(),F=save.farm;T+=dt;syncBabies(L);
   for(let i=F.nests.length-1;i>=0;i--)if(farmProg(F.nests[i])>=1)hatchNest(i,L);
   Object.keys(fWob).forEach(k=>{fWob[k]-=dt;if(fWob[k]<=0)delete fWob[k]});
-  FB.forEach(b=>{b.t+=dt;b.cool=Math.max(0,b.cool-dt);b.happy=Math.max(0,b.happy-dt);const fly=b.k==='ptera';
+  FB.forEach(b=>{b.t+=dt;b.cool=Math.max(0,b.cool-dt);b.happy=Math.max(0,b.happy-dt);const fly=b.k==='ptera',swim=b.k==='mosa',P=pond(L);
     const minY=L.pen.y+(fly?L.pen.h*.25:L.pen.h*.42),maxY=L.pen.y+(fly?L.pen.h*.55:L.pen.h*.97);
     if(b.wait>0){b.wait-=dt;b.moving=false}
-    else{if(!b.tx||Math.hypot(b.tx-b.x,b.ty-b.y)<6){b.tx=L.pen.x+rnd(.1,.9)*L.pen.w;b.ty=rnd(minY,maxY);b.wait=rnd(.5,2.5)}
-      const a=Math.atan2(b.ty-b.y,b.tx-b.x),sp=(fly?60:28+(b.ref.food||0)*3);b.x+=Math.cos(a)*sp*dt;b.y+=Math.sin(a)*sp*dt;b.dir=Math.cos(a)>=0?1:-1;b.moving=true}
-    b.x=clamp(b.x,L.pen.x+20,L.pen.x+L.pen.w-20);b.y=clamp(b.y,minY,maxY)});
+    else{if(!b.tx||Math.hypot(b.tx-b.x,b.ty-b.y)<6){if(swim){const hl=mosaS(b,L)*(bnd('mosa')[1]-bnd('mosa')[0])*.5,mx=Math.max(4,P.rx*.92-hl);b.tx=P.x+rnd(-mx,mx);b.ty=P.y+rnd(-.35,.45)*P.ry;b.wait=rnd(.2,1.2)}else{for(let q=0;q<8;q++){b.tx=L.pen.x+rnd(.1,.9)*L.pen.w;b.ty=rnd(minY,maxY);if(!inPond(b.tx,b.ty,P,1.25))break}b.wait=rnd(.5,2.5)}}
+      const a=Math.atan2(b.ty-b.y,b.tx-b.x),sp=(fly?60:swim?34:28+(b.ref.food||0)*3);b.x+=Math.cos(a)*sp*dt;b.y+=Math.sin(a)*sp*dt;b.dir=Math.cos(a)>=0?1:-1;b.moving=true}
+    if(!swim){b.x=clamp(b.x,L.pen.x+20,L.pen.x+L.pen.w-20);b.y=clamp(b.y,minY,maxY)}});
   fFly.forEach(f=>{f.t+=dt*1.8;if(f.t>=1&&!f.done){f.done=1;const b=f.b;b.ref.food=(b.ref.food||0)+1;b.happy=1.6;b.wait=1;persist();
     tone(700+Math.random()*300,.12,'triangle',.06);tone(900+Math.random()*300,.12,'triangle',.05,0,.1);
     for(let j=0;j<6;j++)fParts.push({x:b.x+rnd(-20,20),y:f.ty,vx:rnd(-30,30),vy:rnd(-90,-40),l:1.2,ml:1.2,heart:1});
@@ -1222,6 +1236,12 @@ function updateFarm(dt){const L=farmLayout(),F=save.farm;T+=dt;syncBabies(L);
   fFly=fFly.filter(f=>!f.done);
   fParts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;if(!p.heart)p.vy+=380*dt;p.l-=dt});fParts=fParts.filter(p=>p.l>0);
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null}}
+function drawMosaBaby(b,L,s){const P=pond(L),bb=bnd('mosa'),y=b.y+Math.sin(b.t*2)*2,hop=b.happy>0?-Math.abs(Math.sin(b.happy*6))*10:0;
+  cx.save();cx.translate(b.x,y+hop);cx.rotate(b.happy>0?Math.sin(b.happy*6)*.08:0);cx.scale(b.dir*s,s*1.3);DRAW.mosa(cx,b.t,true,{happy:b.happy>0,baby:true});cx.restore();
+  cx.save();cx.beginPath();cx.ellipse(P.x,P.y,P.rx-1,P.ry-1,0,0,TAU);cx.clip();cx.fillStyle='rgba(42,127,180,.55)';cx.fillRect(P.x-P.rx,y+hop+(bb[2]+(bb[3]-bb[2])*.68)*s,P.rx*2,P.ry*2);
+  cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=2;const w=(bb[1]-bb[0])*s;cx.beginPath();for(let x=-w*.55;x<=w*.55;x+=6){const yy=y+hop+(bb[2]+(bb[3]-bb[2])*.68)*s+Math.sin(x*.15+b.t*5)*1.5;x===-w*.55?cx.moveTo(b.x+x,yy):cx.lineTo(b.x+x,yy)}cx.stroke();cx.restore();
+  const grown=Math.min(b.ref.food||0,GROWN);cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillStyle=DK;
+  cx.fillText((grown>=GROWN?'':'Baby ')+'Mosasaurus',P.x,P.y-P.ry-20);for(let j=0;j<GROWN;j++)E(cx,P.x-16+j*8,P.y-P.ry-10,3,3,0,j<grown?'#ff8a3d':'rgba(43,28,16,.2)')}
 function rr(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h)}
 function drawFarm(){const L=farmLayout(),F=save.farm,h=L.hatch,p=L.pen;
   const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fd6ff');g.addColorStop(.45,'#e7f7ff');g.addColorStop(.45,'#9fd36b');g.addColorStop(1,'#7cc05a');cx.fillStyle=g;cx.fillRect(0,0,W,H);
@@ -1250,8 +1270,14 @@ function drawFarm(){const L=farmLayout(),F=save.farm,h=L.hatch,p=L.pen;
   rr(cx,p.x+p.w-62,p.y+14,52,26,8);cx.fillStyle='#8a5a34';cx.fill();cx.strokeStyle=DK;cx.lineWidth=2;cx.stroke();
   drawFood(cx,'leaf',p.x+p.w-48,p.y+22,.6);drawFood(cx,'fish',p.x+p.w-34,p.y+24,.55);drawFood(cx,'meat',p.x+p.w-22,p.y+22,.55);
   cx.fillStyle=DK;cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillText('snacks',p.x+p.w-36,p.y+54);
+  {const P=pond(L);cx.save();E(cx,P.x,P.y+3,P.rx+8,P.ry+6,0,'#b89a62');const pg=cx.createRadialGradient(P.x,P.y-P.ry*.3,4,P.x,P.y,P.rx);pg.addColorStop(0,'#5cc3e8');pg.addColorStop(1,'#2a7fb4');cx.fillStyle=pg;cx.beginPath();cx.ellipse(P.x,P.y,P.rx,P.ry,0,0,TAU);cx.fill();cx.strokeStyle=DK;cx.lineWidth=2;cx.stroke();
+    cx.strokeStyle='rgba(255,255,255,.45)';cx.lineWidth=1.5;for(let j=0;j<3;j++){const ph=(T*.4+j/3)%1;cx.globalAlpha=1-ph;cx.beginPath();cx.ellipse(P.x+P.rx*(j-1)*.45,P.y+P.ry*(j%2?.2:-.25),P.rx*.12*(1+ph*2),P.ry*.1*(1+ph*2),0,0,TAU);cx.stroke()}cx.globalAlpha=1;
+    for(let j=0;j<5;j++){const a=j/5*TAU+.4;E(cx,P.x+Math.cos(a)*P.rx*1.02,P.y+Math.sin(a)*P.ry*1.05,7,5,0,'#8f8a80',DK)}
+    cx.fillStyle='#4f9a3e';for(let j=0;j<3;j++){const rx=P.x-P.rx*.95+j*5,ry=P.y-P.ry*.2;cx.fillRect(rx,ry-18-j*4,3,20+j*4);E(cx,rx+1.5,ry-20-j*4,3,7,0,'#7a4a2a')}
+    cx.fillStyle=DK;cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillText('pond',P.x,P.y+P.ry+16);cx.restore()}
   const sorted=[...FB].sort((a,b)=>a.y-b.y);
-  sorted.forEach(b=>{const bh=babyH(b,L),s=bh/(-bnd(b.k)[2]),fly=b.k==='ptera';
+  sorted.forEach(b=>{const swim=b.k==='mosa',bh=babyH(b,L),s=swim?mosaS(b,L):bh/(-bnd(b.k)[2]),fly=b.k==='ptera';
+    if(swim){drawMosaBaby(b,L,s);return}
     if(!fly){cx.fillStyle='rgba(0,0,0,.15)';cx.beginPath();cx.ellipse(b.x,b.y,bh*.5,bh*.08,0,0,TAU);cx.fill()}
     const hop=b.happy>0?-Math.abs(Math.sin(b.happy*8))*bh*.15:0;
     cx.save();cx.translate(b.x,b.y+hop+(fly?-bh*.2:0));cx.scale(b.dir*s,s);DRAW[b.k](cx,b.t,b.moving,{happy:b.happy>0,baby:true});cx.restore();
