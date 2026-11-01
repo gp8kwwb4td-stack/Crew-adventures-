@@ -1204,9 +1204,10 @@ const DIET={maia:'leaf',trike:'leaf',para:'leaf',brachio:'leaf',stego:'leaf',ank
 const FOODNAME={leaf:'leaves',fish:'fish',meat:'a meaty snack'};
 const SZ={maia:1,trike:.95,para:1,brachio:1.35,stego:.95,spino:1.1,ankylo:.8,raptor:.75,ptera:.9,trex:1.2,mosa:1,meg:1,kraken:1,bloop:1,nessie:1,plesio:1,ortho:1,aspido:1,levi:1,cthulhu:1};
 const SWIM={mosa:1,meg:1,kraken:1,bloop:1,nessie:1,plesio:1,ortho:1,aspido:1,levi:1,cthulhu:1};function bndS(k){return k==='mosa'?bnd('mosa'):k==='meg'?[-62,62,-26,16]:k==='bloop'?[-62,62,-28,18]:k==='nessie'||k==='plesio'?[-44,46,-62,12]:k==='ortho'?[-60,40,-20,20]:k==='aspido'?[-50,60,-48,14]:k==='levi'?[-70,60,-30,16]:k==='cthulhu'?[-30,30,-60,16]:[-34,34,-46,14]}
-function pond(L){const p=L.pen;return{x:p.x+p.w*.68,y:p.y+p.h*.7,rx:p.w*.29,ry:p.h*.21}}
+function pondList(L){const p=L.pen;let n=0;FB.forEach(b=>{if(SWIM[b.k])b.pi=(n++)>>1});const k=Math.max(1,Math.ceil(n/2)),cols=Math.min(k,3),rows=Math.ceil(k/cols),y0=p.y+p.h*.55,ah=p.h*.44,out=[];for(let i=0;i<k;i++){const r=Math.floor(i/cols),inRow=Math.min(cols,k-r*cols),c=i-r*cols,cw=p.w/inRow,ch=ah/rows;out.push({x:p.x+cw*(c+.5),y:y0+ch*(r+.5),rx:Math.min(cw*.42,p.w*.29),ry:Math.min(ch*.38,p.h*.19)})}return out}
+function pond(L,b){const P=pondList(L);return P[Math.min(P.length-1,(b&&b.pi)||0)]}
 function inPond(x,y,P,k){return((x-P.x)/(P.rx*k))**2+((y-P.y)/(P.ry*k))**2<1}
-function mosaS(b,L){const f=(b.ref?b.ref.food:b.food)||0,P=pond(L),bb=bndS(b.k),k=b.k==='mosa'?1.1:b.k==='meg'?.7:b.k==='bloop'?.75:b.k==='nessie'||b.k==='plesio'?.5:b.k==='levi'?.8:b.k==='ortho'?.62:.5;return P.rx*(k+.1*Math.min(f,GROWN))/(bb[1]-bb[0])}
+function mosaS(b,L){const f=(b.ref?b.ref.food:b.food)||0,P={rx:Math.min(L.pen.w*.29,L.pen.w*.17+40)},bb=bndS(b.k),k=b.k==='mosa'?1.1:b.k==='meg'?.7:b.k==='bloop'?.75:b.k==='nessie'||b.k==='plesio'?.5:b.k==='levi'?.8:b.k==='ortho'?.62:.5;return P.rx*(k+.1*Math.min(f,GROWN))/(bb[1]-bb[0])}
 const HATCH_MS=40000,GROWN=5,NESTS=6;
 let FB=[],fParts=[],fFly=[],fWob={};
 function farmProg(n){return clamp((Date.now()-n.start)/HATCH_MS+n.taps*.07,0,1)}
@@ -1217,7 +1218,7 @@ function farmLayout(){const cs=getComputedStyle(document.documentElement),pt=par
   const hh=clamp((bot-top)*.4,190,280);return{hatch:{x:12,y:top,w:W-24,h:hh},pen:{x:12,y:top+hh+14,w:W-24,h:bot-top-hh-14}}}
 function nestPos(i,L){const h=L.hatch,col=i%3,row=Math.floor(i/3);return{x:h.x+h.w*(col+.5)/3,y:h.y+h.h*(.5+row*.3),r:Math.min(h.w/3,h.h*.32)*.42}}
 function babyH(b,L){if(SWIM[b.k])return mosaS(b,L)*(-bndS(b.k)[2])*1.8;const f=(b.ref?b.ref.food:b.food)||0;return Math.min(L.pen.h*.75,L.pen.h*(.2+.04*Math.min(f,GROWN))*(SZ[b.k]||1))}
-function syncBabies(L){const F=save.farm;while(FB.length<F.pen.length){const i=FB.length,b=F.pen[i];FB.push({ref:b,k:b.k,x:L.pen.x+rnd(.2,.8)*L.pen.w,y:L.pen.y+rnd(.4,.95)*L.pen.h,dir:1,t:Math.random()*9,tx:0,ty:0,wait:0,cool:0,happy:0});const nb=FB[FB.length-1];if(SWIM[nb.k]){const P=pond(L);nb.x=P.x+rnd(-.3,.3)*P.rx;nb.y=P.y}}}
+function syncBabies(L){const F=save.farm;while(FB.length<F.pen.length){const i=FB.length,b=F.pen[i];FB.push({ref:b,k:b.k,x:L.pen.x+rnd(.2,.8)*L.pen.w,y:L.pen.y+rnd(.4,.95)*L.pen.h,dir:1,t:Math.random()*9,tx:0,ty:0,wait:0,cool:0,happy:0});const nb=FB[FB.length-1];if(SWIM[nb.k]){const P=pond(L,nb);nb.x=P.x+rnd(-.3,.3)*P.rx;nb.y=P.y}}}
 function openFarm(){if(state!=='play')return;ac();const n=save.carry.length;
   save.farm.basket.push(...save.carry);save.carry.length=0;fillNests();persist();
   state='farm';['hud','ctrl','hi'].forEach(i=>show(i,0));show('farmUi',1);show('farmTop',1);FB=[];fParts=[];fFly=[];
@@ -1228,7 +1229,7 @@ function farmTexts(){const F=save.farm,eggsN=F.nests.length+F.basket.length;
   $('fCount').textContent=`🥚 ${eggsN} · 🦕 ${F.pen.length}`;
   $('fTip').textContent=eggsN?'Tap the eggs to keep them warm and help them hatch faster.':F.pen.length?'Tap a baby to feed it. Five meals and it grows up!':'No eggs yet. Find them in the valley and bring them here!'}
 function hatchNest(i,L){const F=save.farm,n=F.nests[i],p=nestPos(i,L);F.nests.splice(i,1);const b={k:n.k,food:0};F.pen.push(b);fillNests();persist();
-  syncBabies(L);const fb=FB[FB.length-1];fb.x=clamp(p.x,L.pen.x+30,L.pen.x+L.pen.w-30);fb.y=L.pen.y+L.pen.h*.55;fb.happy=2;if(SWIM[n.k]){const P=pond(L);fb.x=P.x;fb.y=P.y}
+  syncBabies(L);const fb=FB[FB.length-1];fb.x=clamp(p.x,L.pen.x+30,L.pen.x+L.pen.w-30);fb.y=L.pen.y+L.pen.h*.55;fb.happy=2;if(SWIM[n.k]){const P=pond(L,fb);fb.x=P.x;fb.y=P.y}
   for(let j=0;j<26;j++)fParts.push({x:p.x,y:p.y,vx:rnd(-160,160),vy:rnd(-260,-60),l:1.2,ml:1.2,c:[EGGC[n.k][0],EGGC[n.k][1],'#ffe066'][j%3]});
   sfx.hatch();banner={t:3,text:'A baby '+DSHORT[n.k]+' hatched!',sub:SWIM[n.k]?'It loves to swim in the pond. Tap it to give it fish!':'Tap it to give it '+FOODNAME[DIET[n.k]]};farmTexts();updateCounts()}
 function feed(b,L){if(b.cool>0)return;b.cool=1.1;const bx=L.pen.x+L.pen.w-34,by=L.pen.y+26;
@@ -1245,10 +1246,10 @@ function drawFood(c,kind,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
 function updateFarm(dt){const L=farmLayout(),F=save.farm;T+=dt;syncBabies(L);
   for(let i=F.nests.length-1;i>=0;i--)if(farmProg(F.nests[i])>=1)hatchNest(i,L);
   Object.keys(fWob).forEach(k=>{fWob[k]-=dt;if(fWob[k]<=0)delete fWob[k]});
-  FB.forEach(b=>{b.t+=dt;b.cool=Math.max(0,b.cool-dt);b.happy=Math.max(0,b.happy-dt);const fly=b.k==='ptera',swim=!!SWIM[b.k],P=pond(L);
-    const minY=L.pen.y+(fly?L.pen.h*.25:L.pen.h*.42),maxY=L.pen.y+(fly?L.pen.h*.55:L.pen.h*.97);
+  FB.forEach(b=>{b.t+=dt;b.cool=Math.max(0,b.cool-dt);b.happy=Math.max(0,b.happy-dt);const fly=b.k==='ptera',swim=!!SWIM[b.k],P=pond(L,b);
+    const anyS=FB.some(q=>SWIM[q.k]),minY=L.pen.y+(fly?L.pen.h*.25:anyS&&!swim?L.pen.h*.32:L.pen.h*.42),maxY=L.pen.y+(fly?L.pen.h*.55:anyS&&!swim?L.pen.h*.54:L.pen.h*.97);
     if(b.wait>0){b.wait-=dt;b.moving=false}
-    else{if(!b.tx||Math.hypot(b.tx-b.x,b.ty-b.y)<6){if(swim){const hl=mosaS(b,L)*(bndS(b.k)[1]-bndS(b.k)[0])*.5,mx=Math.max(4,P.rx*.92-hl);b.tx=P.x+rnd(-mx,mx);b.ty=P.y+rnd(-.35,.45)*P.ry;b.wait=rnd(.2,1.2)}else{for(let q=0;q<8;q++){b.tx=L.pen.x+rnd(.1,.9)*L.pen.w;b.ty=rnd(minY,maxY);if(!inPond(b.tx,b.ty,P,1.25))break}b.wait=rnd(.5,2.5)}}
+    else{if(!b.tx||Math.hypot(b.tx-b.x,b.ty-b.y)<6){if(swim){const hl=mosaS(b,L)*(bndS(b.k)[1]-bndS(b.k)[0])*.5,mx=Math.max(4,P.rx*.92-hl);b.tx=P.x+rnd(-mx,mx);b.ty=P.y+rnd(-.35,.45)*P.ry;b.wait=rnd(.2,1.2)}else{for(let q=0;q<8;q++){b.tx=L.pen.x+rnd(.1,.9)*L.pen.w;b.ty=rnd(minY,maxY);if(!pondList(L).some(Q=>inPond(b.tx,b.ty,Q,1.25)))break}b.wait=rnd(.5,2.5)}}
       const a=Math.atan2(b.ty-b.y,b.tx-b.x),sp=(fly?60:swim?(b.k==='kraken'?18:b.k==='meg'?42:34):28+(b.ref.food||0)*3);b.x+=Math.cos(a)*sp*dt;b.y+=Math.sin(a)*sp*dt;b.dir=Math.cos(a)>=0?1:-1;b.moving=true}
     if(!swim){b.x=clamp(b.x,L.pen.x+20,L.pen.x+L.pen.w-20);b.y=clamp(b.y,minY,maxY)}});
   fFly.forEach(f=>{f.t+=dt*1.8;if(f.t>=1&&!f.done){f.done=1;const b=f.b;b.ref.food=(b.ref.food||0)+1;b.happy=1.6;b.wait=1;persist();
@@ -1258,7 +1259,7 @@ function updateFarm(dt){const L=farmLayout(),F=save.farm;T+=dt;syncBabies(L);
   fFly=fFly.filter(f=>!f.done);
   fParts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;if(!p.heart)p.vy+=380*dt;p.l-=dt});fParts=fParts.filter(p=>p.l>0);
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null}}
-function drawMosaBaby(b,L,s){const P=pond(L),bb=bndS(b.k),y=b.y+Math.sin(b.t*2)*2,hop=b.happy>0?-Math.abs(Math.sin(b.happy*6))*10:0;
+function drawMosaBaby(b,L,s){const P=pond(L,b),bb=bndS(b.k),y=b.y+Math.sin(b.t*2)*2,hop=b.happy>0?-Math.abs(Math.sin(b.happy*6))*10:0;
   cx.save();cx.translate(b.x,y+hop);cx.rotate(b.happy>0?Math.sin(b.happy*6)*.08:0);if(b.k==='mosa'){cx.scale(b.dir*s,s*1.3);DRAW.mosa(cx,b.t,true,{happy:b.happy>0,baby:true})}else{cx.scale(b.dir*s,s);({meg:drawMeg2D,kraken:drawKraken2D,bloop:drawBloop2D,nessie:drawNessie2D,plesio:drawPlesio2D,ortho:drawOrtho2D,aspido:drawAspido2D,levi:drawLevi2D,cthulhu:drawCthu2D})[b.k](cx,b.t)}cx.restore();
   cx.save();cx.beginPath();cx.ellipse(P.x,P.y,P.rx-1,P.ry-1,0,0,TAU);cx.clip();cx.fillStyle='rgba(42,127,180,.55)';cx.fillRect(P.x-P.rx,y+hop+(bb[2]+(bb[3]-bb[2])*.68)*s,P.rx*2,P.ry*2);
   cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=2;const w=(bb[1]-bb[0])*s;cx.beginPath();for(let x=-w*.55;x<=w*.55;x+=6){const yy=y+hop+(bb[2]+(bb[3]-bb[2])*.68)*s+Math.sin(x*.15+b.t*5)*1.5;x===-w*.55?cx.moveTo(b.x+x,yy):cx.lineTo(b.x+x,yy)}cx.stroke();cx.restore();
@@ -1346,11 +1347,11 @@ function drawFarm(){const L=farmLayout(),F=save.farm,h=L.hatch,p=L.pen;
   rr(cx,p.x+p.w-62,p.y+14,52,26,8);cx.fillStyle='#8a5a34';cx.fill();cx.strokeStyle=DK;cx.lineWidth=2;cx.stroke();
   drawFood(cx,'leaf',p.x+p.w-48,p.y+22,.6);drawFood(cx,'fish',p.x+p.w-34,p.y+24,.55);drawFood(cx,'meat',p.x+p.w-22,p.y+22,.55);
   cx.fillStyle=DK;cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillText('snacks',p.x+p.w-36,p.y+54);
-  {const P=pond(L);cx.save();E(cx,P.x,P.y+3,P.rx+8,P.ry+6,0,'#b89a62');const pg=cx.createRadialGradient(P.x,P.y-P.ry*.3,4,P.x,P.y,P.rx);pg.addColorStop(0,'#5cc3e8');pg.addColorStop(1,'#2a7fb4');cx.fillStyle=pg;cx.beginPath();cx.ellipse(P.x,P.y,P.rx,P.ry,0,0,TAU);cx.fill();cx.strokeStyle=DK;cx.lineWidth=2;cx.stroke();
+  pondList(L).forEach(P=>{cx.save();E(cx,P.x,P.y+3,P.rx+8,P.ry+6,0,'#b89a62');const pg=cx.createRadialGradient(P.x,P.y-P.ry*.3,4,P.x,P.y,P.rx);pg.addColorStop(0,'#5cc3e8');pg.addColorStop(1,'#2a7fb4');cx.fillStyle=pg;cx.beginPath();cx.ellipse(P.x,P.y,P.rx,P.ry,0,0,TAU);cx.fill();cx.strokeStyle=DK;cx.lineWidth=2;cx.stroke();
     cx.strokeStyle='rgba(255,255,255,.45)';cx.lineWidth=1.5;for(let j=0;j<3;j++){const ph=(T*.4+j/3)%1;cx.globalAlpha=1-ph;cx.beginPath();cx.ellipse(P.x+P.rx*(j-1)*.45,P.y+P.ry*(j%2?.2:-.25),P.rx*.12*(1+ph*2),P.ry*.1*(1+ph*2),0,0,TAU);cx.stroke()}cx.globalAlpha=1;
     for(let j=0;j<5;j++){const a=j/5*TAU+.4;E(cx,P.x+Math.cos(a)*P.rx*1.02,P.y+Math.sin(a)*P.ry*1.05,7,5,0,'#8f8a80',DK)}
     cx.fillStyle='#4f9a3e';for(let j=0;j<3;j++){const rx=P.x-P.rx*.95+j*5,ry=P.y-P.ry*.2;cx.fillRect(rx,ry-18-j*4,3,20+j*4);E(cx,rx+1.5,ry-20-j*4,3,7,0,'#7a4a2a')}
-    cx.fillStyle=DK;cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillText('pond',P.x,P.y+P.ry+16);cx.restore()}
+    cx.fillStyle=DK;cx.font='800 11px Nunito,sans-serif';cx.textAlign='center';cx.fillText('pond',P.x,P.y+P.ry+16);cx.restore()});
   const sorted=[...FB].sort((a,b)=>a.y-b.y);
   sorted.forEach(b=>{const swim=!!SWIM[b.k],bh=babyH(b,L),s=swim?mosaS(b,L):bh/(-bnd(b.k)[2]),fly=b.k==='ptera';
     if(swim){drawMosaBaby(b,L,s);return}
