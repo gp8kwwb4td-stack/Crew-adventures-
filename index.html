@@ -88,6 +88,8 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .bk canvas{width:100%;height:76px}
 .bk b{font-family:var(--font-d);font-weight:400;font-size:14px;text-align:center;line-height:1.1}
 .row{display:flex;gap:10px;flex-wrap:wrap}
+.bkh{font-family:var(--font-d);font-weight:400;font-size:20px;margin:10px 0 6px}.bkh small{font-family:Nunito,sans-serif;font-size:14px;font-weight:800;opacity:.7;margin-left:6px}
+.bk.sea{background:linear-gradient(180deg,#e4f6ff,#bfe3f5)}
 .row>*{flex:1}
 #farmTop{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:none;
   padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
@@ -115,7 +117,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 <div id="hud" hidden>
   <div class="hl"><div class="zone"><b id="zName">Nest Meadow</b></div><canvas id="mini" width="224" height="224" aria-label="Map"></canvas></div>
   <div class="counts">
-    <button id="bBook" aria-label="Dino Book"><span id="cDino">🦕 0/12</span><small>Book</small></button>
+    <button id="bBook" aria-label="Creature Book"><span id="cDino">📖 0/24</span><small>Book</small></button>
     <button id="bFarm" aria-label="Dino Farm"><span id="cFarm">🏡 0</span><small>Farm</small></button>
     <button id="bMenu" aria-label="Menu"><span>☰</span><small>Menu</small></button>
   </div>
@@ -163,9 +165,12 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 
 <section class="screen dim" id="bookDlg" hidden>
   <div class="sheet">
-    <h2>Dino Book</h2>
-    <p id="bookSub">Say hi to every dinosaur to fill your book.</p>
+    <h2>Creature Book</h2>
+    <p id="bookSub">Say hi to every creature to fill your book.</p>
+    <h3 class="bkh">🦕 Dinosaurs <small id="bkD"></small></h3>
     <div class="bookgrid" id="bookGrid"></div>
+    <h3 class="bkh">🌊 Sea &amp; Lake Giants <small id="bkS"></small></h3>
+    <div class="bookgrid" id="bookGrid2"></div>
     <button class="go" id="bookClose">Back to the valley</button>
   </div>
 </section>
@@ -1176,17 +1181,38 @@ function drawMini(){const m=(x,z)=>[(x+EDGE)/(2*EDGE)*MS,(z+EDGE)/(2*EDGE)*MS],Z
 let cardDino=null;
 function meet(d){if(!d)return;const info=DINO[DIDX[d.k]];d.happy=2.6;d.wake=14;d.mode='look';if(d.k==='trex')d.roar=1.6;ac();VOLK=clamp(1.1-Math.hypot(d.x-Pl.x,d.z-Pl.z)/80,.3,1);CALL[info.call]();VOLK=1;
   const fresh=!save.met.includes(d.k);if(fresh){save.met.push(d.k);persist();hearts(d.x,d.y+(d.fly?1:d.top+.5),d.z,12)}
-  cardDino=d.k;$('cName').textContent=info.name;$('cSay').textContent='Say it: '+info.say;$('cFact').textContent=info.fact;
+  cardDino=d.k;cardGiant=null;$('cardCv').style.background='';$('cName').textContent=info.name;$('cSay').textContent='Say it: '+info.say;$('cFact').textContent=info.fact;
   $('cTags').innerHTML=(fresh?'<span>New in your Dino Book!</span>':'')+info.tags.map(t=>`<span>${t}</span>`).join('');
   show('cardDlg',1);state='card';updateCounts();
-  if(fresh&&save.met.length===11)setTimeout(()=>{banner={t:3.5,text:'Dino Book complete!',sub:'You met every dinosaur in the valley'};sfx.hatch()},400)}
-$('cClose').onclick=()=>{show('cardDlg',0);state='play';cardDino=null;checkWin()};
-function openBook(){const g=$('bookGrid');g.innerHTML='';
-  DINO.forEach(d=>{const met=save.met.includes(d.k);const el=document.createElement('button');el.className='bk';
-    const c=document.createElement('canvas');c.width=240;c.height=152;el.appendChild(c);const b=document.createElement('b');b.textContent=met?d.name:'???';el.appendChild(b);
-    const x=c.getContext('2d');fitDino(x,d.k,240,152,0);if(!met){x.globalCompositeOperation='source-in';x.fillStyle='#5a4a3a';x.fillRect(0,0,240,152)}
-    el.disabled=!met;if(met)el.onclick=()=>{show('bookDlg',0);meet(dinos.find(z=>z.k===d.k))};g.appendChild(el)});
-  $('bookSub').textContent=`You have met ${save.met.length} of 11. ${save.met.length<11?'Grey ones are still waiting somewhere in the valley.':'Amazing, you met them all!'}`;
+  if(fresh&&save.met.length===DINO.length)setTimeout(()=>{banner={t:3.5,text:'Dino Book complete!',sub:'You met every dinosaur in the valley'};sfx.hatch()},400)}
+$('cClose').onclick=()=>{show('cardDlg',0);state='play';cardDino=null;cardGiant=null;checkWin()};
+const GLIST=['meg','kraken','bloop','nessie','plesio','ortho','aspido','levi','cthulhu','livy','lumora','bluew'];
+const GINFO={
+ meg:{name:'Megalodon',say:'MEG-uh-lo-don',tags:['About 15–18 m long','Biggest shark ever','Real, now extinct'],fact:'A giant shark that lived until about 3.6 million years ago. Its teeth were as big as your hand, and people still find them on beaches today.'},
+ kraken:{name:'Kraken',say:'KRAH-ken',tags:['Legend','Old sailor stories','Inspired by giant squids'],fact:'Sailors in old stories from Norway told of a sea monster so big it could grab whole ships. Real giant squids might be what they saw.'},
+ bloop:{name:'Bloop',say:'BLOOP',tags:['Legend','Named after a real sound','Heard in 1997'],fact:'Named after a super loud sound heard under the ocean in 1997. Scientists think it was giant ice cracking near Antarctica, but people imagined a huge monster.'},
+ nessie:{name:'Nessie',say:'NESS-ee',tags:['Legend','Lives in a lake','Loch Ness, Scotland'],fact:'People have told stories about a monster in Loch Ness, a big lake in Scotland, for almost 100 years. Nobody has ever found it!'},
+ plesio:{name:'Plesiosaurus',say:'PLEE-zee-oh-SORE-us',tags:['About 3.5 m long','Real sea reptile','Fish eater'],fact:'A real sea reptile with a long neck and four big flippers. It lived in the time of the dinosaurs, but it was not a dinosaur.'},
+ ortho:{name:'Giant Orthocone',say:'OR-tho-cone',tags:['Real, very ancient','450 million years ago','Cousin of squids'],fact:'A real animal with a long, straight, pointy shell and lots of arms, like a squid inside a cone. It lived long before the dinosaurs.'},
+ aspido:{name:'Aspidochelone',say:'as-pid-oh-KEL-oh-nee',tags:['Legend','Island-sized','Very old story'],fact:'An old sailor legend about a turtle so huge that sailors thought it was an island. They would land on it, and then it would swim away!'},
+ levi:{name:'Leviathan',say:'luh-VY-uh-thun',tags:['Legend','Giant sea serpent','Very old story'],fact:'A giant sea serpent from very old stories. In the legends it was so long it could wrap around the whole ocean.'},
+ cthulhu:{name:'Cthulhu',say:'kuh-THOO-loo',tags:['Story monster','Written in 1928','Sleeps in the deep'],fact:'A giant sea monster from a spooky story written in 1928. In the story it sleeps at the very bottom of the ocean.'},
+ livy:{name:'Livyatan',say:'LIV-ya-tan',tags:['About 15 m long','Real, now extinct','Giant teeth'],fact:'A real whale that lived about 10 million years ago. Its teeth were some of the biggest of any animal ever, longer than a ruler!'},
+ lumora:{name:'Lumora',say:'loo-MOR-uh',tags:['Made for Dino Valley','Glows in the dark','Deep-sea giant'],fact:'A one-of-a-kind giant made just for Dino Valley! It lives in the deepest, darkest part of the ocean and glows to light its way.'},
+ bluew:{name:'Blue Whale',say:'BLOO wayl',tags:['Up to about 30 m long','Still alive today','Heaviest animal ever'],fact:'The heaviest animal that has ever lived, heavier than any dinosaur! It eats tiny shrimp called krill, and its heart is as big as a small car.'}};
+let cardGiant=null;
+function giantArt(x,k,w,h,t){const bb=bndS(k),s=Math.min(w*.84/(bb[1]-bb[0]),h*.8/(bb[3]-bb[2]));x.save();x.translate(w/2-(bb[0]+bb[1])/2*s,h/2-(bb[2]+bb[3])/2*s);x.scale(s,s);
+  ({meg:drawMeg2D,kraken:drawKraken2D,bloop:drawBloop2D,nessie:drawNessie2D,plesio:drawPlesio2D,ortho:drawOrtho2D,aspido:drawAspido2D,levi:drawLevi2D,cthulhu:drawCthu2D,livy:drawLivy2D,lumora:drawLumora2D,bluew:drawBlueW2D})[k](x,t||0);x.restore()}
+function giantCard(k,fresh){const I=GINFO[k];cardDino=null;cardGiant=k;$('cardCv').style.background='linear-gradient(180deg,#cdeeff,#8fd0ef 38%,#4a9fcf 40%,#2f7fb0)';$('cName').textContent=I.name;$('cSay').textContent='Say it: '+I.say;$('cFact').textContent=I.fact;
+  $('cTags').innerHTML=(fresh?'<span>New in your Creature Book!</span>':'')+I.tags.map(t=>`<span>${t}</span>`).join('');show('cardDlg',1);state='card'}
+function bookTile(grid,k,name,met,draw,sea){const el=document.createElement('button');el.className='bk'+(sea?' sea':'');const c=document.createElement('canvas');c.width=240;c.height=152;el.appendChild(c);
+  const b=document.createElement('b');b.textContent=met?name:'???';el.appendChild(b);const x=c.getContext('2d');draw(x);if(!met){x.globalCompositeOperation='source-in';x.fillStyle=sea?'#3f6276':'#5a4a3a';x.fillRect(0,0,240,152)}
+  el.disabled=!met;grid.appendChild(el);return el}
+function openBook(){const g=$('bookGrid'),g2=$('bookGrid2');g.innerHTML='';g2.innerHTML='';const gm=save.giants||[];
+  DINO.forEach(d=>{const met=save.met.includes(d.k);const el=bookTile(g,d.k,d.name,met,x=>fitDino(x,d.k,240,152,0));if(met)el.onclick=()=>{show('bookDlg',0);meet(dinos.find(z=>z.k===d.k))}});
+  GLIST.forEach(k=>{const met=gm.includes(k);const el=bookTile(g2,k,GINFO[k].name,met,x=>giantArt(x,k,240,152,0),1);if(met)el.onclick=()=>{show('bookDlg',0);giantCard(k)}});
+  const tot=DINO.length+GLIST.length,n=save.met.length+gm.length;$('bkD').textContent=`${save.met.length}/${DINO.length}`;$('bkS').textContent=`${gm.length}/${GLIST.length}`;
+  $('bookSub').textContent=`You have met ${n} of ${tot} creatures. ${n<tot?'Grey ones are still waiting somewhere in the valley and the sea.':'Amazing, you met them all!'}`;
   show('bookDlg',1);state='book'}
 $('bBook').onclick=openBook;$('bookClose').onclick=()=>{show('bookDlg',0);state='play'};
 function openMenu(){if(state!=='play')return;state='menu2';$('menuSub').textContent=`${save.met.length}/${DINO.length} dinos met · ${save.farm.pen.length} farm babies · ${save.friends.length}/14 friends`;show('menuDlg',1)}
@@ -1195,8 +1221,8 @@ let resetArm=false;$('mReset').onclick=()=>{if(!resetArm){resetArm=true;$('mRese
   save={met:[],spots:{},carry:[],friends:[],farm:{nests:[],basket:[],pen:[]}};persist();resetArm=false;$('mReset').textContent='Start the valley over';show('menuDlg',0);buildWorld();state='play';updateCounts()};
 function closeDialogs(){['cardDlg','bookDlg','menuDlg'].forEach(i=>show(i,0));if(state!=='menu')state='play'}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')openMenu()});
-function updateCounts(){$('cDino').textContent=`🦕 ${save.met.length}/${DINO.length}`;$('cFarm').textContent=`🏡 ${save.farm.pen.length}`}
-let won=false;function checkWin(){if(!won&&save.met.length===11){won=true;banner={t:4,text:'Valley Champion!',sub:'You met every dino. Hooray!'};sfx.hatch()}}
+function updateCounts(){$('cDino').textContent=`📖 ${save.met.length+(save.giants||[]).length}/${DINO.length+GLIST.length}`;$('cFarm').textContent=`🏡 ${save.farm.pen.length}`}
+let won=false;function checkWin(){if(!won&&save.met.length===DINO.length){won=true;banner={t:4,text:'Valley Champion!',sub:'You met every dino. Hooray!'};sfx.hatch()}}
 
 function egg(x,y,k,s,c){c=c||cx;const C=EGGC[k]||EGGC.maia;c.save();c.translate(x,y);c.scale(s,s);
   const g=c.createRadialGradient(-4,-6,1,0,0,17);g.addColorStop(0,'#ffffff');g.addColorStop(.35,C[0]);g.addColorStop(1,mixC(C[0],'#000000',.38));c.fillStyle=g;c.beginPath();c.ellipse(0,0,11.5,15.5,0,0,TAU);c.fill();
@@ -1549,7 +1575,7 @@ function giantPos(g){if(g.pos)return g.pos();return g===NESS?[NESS.x,NESS.y+7,NE
 function greetGiant(g){if(!g)return;ac();if(!save.giants)save.giants=[];const first=!save.giants.includes(g.k);if(first){save.giants.push(g.k);persist()}
   const [x,y,z]=giantPos(g);hearts(x,y+2,z,16);g.happy=3.2;
   if(g.greet){g.greet()}else if(g===NESS){NESS.happy=5;NESS.dive=0;NESS.dtimer=rnd(18,30);[262,330,392,523].forEach((f,i)=>tone(f,.35,'sine',.07,40,i*.18));bigSplash(NESS.x,SEA_LEVEL,NESS.z,24,1)}else if(g===BLOOP){BLOOP.happy=5;BLOOP.idle=rnd(35,60);bloopSound(Math.hypot(BLOOP.x-Pl.x,BLOOP.z-Pl.z));bigSplash(BLOOP.x,SEA_LEVEL,BLOOP.z,40,1.6)}else if(g===MEG){if(MEG.jump==null)MEG.jump=0;CALL.splash()}else{CALL.low();[300,380,460,560].forEach((f,i)=>tone(f,.12,'sine',.05,120,.5+i*.09));bigSplash(KRK.x,SEA_LEVEL,KRK.z,30,1.2)}
-  const F=GFACT[g.k];banner={t:3.6,text:F.text,sub:first?F.sub+` (giants met: ${save.giants.length}/${GIANTS.length})`:F.sub}}
+  const F=GFACT[g.k];banner={t:3.6,text:F.text,sub:first?'New in your Creature Book! '+F.sub:F.sub};updateCounts()}
 function tapGiant(sx,sy,lim){let best=null,bd=lim+40;GIANTS.forEach(g=>{if(!g.g.visible||Math.hypot(g.x-Pl.x,g.z-Pl.z)>(g.range||72)+40)return;const [x,y,z]=giantPos(g);TMPV.set(x,y,z).project(camera);if(TMPV.z>1)return;
   const dd=Math.hypot((TMPV.x*.5+.5)*W-sx,(-TMPV.y*.5+.5)*H-sy);if(dd<bd){bd=dd;best=g}});return best}
 function updateGiants(dt){GIANTS.forEach(g=>{g.g.visible=Math.hypot(g.x-camera.position.x,g.z-camera.position.z)<300});
@@ -1972,6 +1998,7 @@ function frame(now){const rdt=(now-lastT)/1000,dt=Math.min(.05,rdt);lastT=now;fr
   cx.clearRect(0,0,W,H);if(state==='play'||state==='card')drawBanner();
   if(state==='play'&&frameN%4===0)drawMini();
   if(cardDino&&state==='card'){const c=$('cardCv').getContext('2d');c.clearRect(0,0,760,360);fitDino(c,cardDino,760,360,T,{roar:cardDino==='trex'&&T%3<1})}
+  else if(cardGiant&&state==='card'){const c=$('cardCv').getContext('2d');c.clearRect(0,0,760,360);giantArt(c,cardGiant,760,360,T)}
   requestAnimationFrame(frame)}
 if(/debug/.test(location.search))window.__H=heightAt;window.__R=renderer;window.__W=water;
 if(/debug/.test(location.search))window.__g={Pl,dinos,friends,setTod:v=>{tod=v},setCam:(y,p,d)=>{camYaw=y;camPitch=p;camDist=d},giants:()=>GIANTS,greet:i=>greetGiant(GIANTS[i]),cam:camera,dbgcam:()=>[camera.position.y,scene.fog.near,scene.fog.far],sub:SUB,enterSub:()=>enterSub(),dive:()=>subDive(),go:(x,z)=>{Pl.x=x;Pl.z=z;Pl.y=heightAt(x,z);camera.position.set(x,Pl.y+6,z+8)}};
