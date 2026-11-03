@@ -1169,7 +1169,7 @@ function update(dt){if(SUB.on){subUpdate(dt);return}T+=dt;tod=(tod+dt/300)%1;if(
   if(keys.q)camYaw+=dt*1.8;if(keys.e)camYaw-=dt*1.8;
   const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=-Math.sin(camYaw),mx=fx*-iy+rx*ix,mz=fz*-iy+rz*ix,amt=Math.min(1,Math.hypot(mx,mz));
   const wet=!onBridge(Pl.x,Pl.z)&&heightAt(Pl.x,Pl.z)<SEA_LEVEL+.05,spd=(VEH==='jeep'?15:VEH==='balloon'?9:wet?2.6:5)*amt;Pl.moving=amt>.08;if(VEH)vehMove(dt,mx,mz,amt);
-  if(Pl.moving){const nx=Pl.x+mx/amt*spd*dt,nz=Pl.z+mz/amt*spd*dt;if(canGo(nx,nz)){Pl.x=nx;Pl.z=nz}else if(canGo(nx,Pl.z))Pl.x=nx;else if(canGo(Pl.x,nz))Pl.z=nz;
+  if(Pl.moving){const nx=Pl.x+mx/amt*spd*dt,nz=Pl.z+mz/amt*spd*dt;if(canGo(nx,nz)||!canGo(Pl.x,Pl.z)){Pl.x=nx;Pl.z=nz}else if(canGo(nx,Pl.z))Pl.x=nx;else if(canGo(Pl.x,nz))Pl.z=nz;
     const ow=Pl.walk;Pl.walk+=dt*spd*2.2;if(!VEH&&Pl.ground&&Math.floor(ow/Math.PI)!==Math.floor(Pl.walk/Math.PI)){if(wet)splash(Pl.x,SEA_LEVEL,Pl.z,4);else sfx.step()}
     if(Math.abs(ix)>.2)Pl.face=ix>0?1:-1;camYaw-=ix*dt*.9}
   dinos.forEach(d=>{if(d.fly||d.sea)return;const r=Math.max(.9,d.len*.26),dx=Pl.x-d.x,dz=Pl.z-d.z,dd=Math.hypot(dx,dz);if(dd<r&&dd>.001){Pl.x=d.x+dx/dd*r;Pl.z=d.z+dz/dd*r}});
@@ -1791,7 +1791,7 @@ const subOut=(()=>{const b=document.createElement('button');b.textContent='🏖�
   b.onclick=()=>exitSub();document.body.appendChild(b);return b})();
 function enterSub(){ac();SUB.on=true;SUB.dive=false;SUB.x=SUB.dx;SUB.z=SUB.dz;SUB.y=SEA_LEVEL-.35;SUB.h=0;plB.m.visible=plB.sh.visible=false;subOut.hidden=false;subView.hidden=false;SUB.inside=true;subViewTxt();$('kJ').textContent='⬇';
   camDist=Math.max(camDist,10);banner={t:3,text:'All aboard the submarine!',sub:'Push the stick to drive. Tap ⬇ to dive under the sea!'};tone(520,.15,'triangle',.05);tone(780,.2,'triangle',.05,0,.15)}
-function exitSub(){SUB.on=false;subView.hidden=true;subG.visible=true;zoneLabel='';curZone=-1;SUB.dive=false;subOut.hidden=true;plB.m.visible=plB.sh.visible=true;$('kJ').textContent='⤒';Pl.x=168;Pl.z=SUB.dz+3;Pl.y=groundY(Pl.x,Pl.z);
+function exitSub(){SUB.on=false;subView.hidden=true;subG.visible=true;zoneLabel='';curZone=-1;SUB.dive=false;subOut.hidden=true;plB.m.visible=plB.sh.visible=true;$('kJ').textContent='⤒';Pl.x=161;Pl.z=SUB.dz+3;for(let k=0;k<40&&!canWalk(Pl.x,Pl.z);k++)Pl.x-=1;Pl.y=groundY(Pl.x,Pl.z);Pl.vy=0;
   camera.position.set(Pl.x+4,Pl.y+5,Pl.z+6);banner={t:2,text:'Back on the beach',sub:''};$('hi').hidden=true}
 function subDive(){if(!SUB.on)return;SUB.dive=!SUB.dive;if(SUB.dive&&!save.dived){save.dived=1;persist()}$('kJ').textContent=SUB.dive?'⬆':'⬇';tone(SUB.dive?300:420,.3,'sine',.06,SUB.dive?-120:160);if(!SUB.dive)banner={t:1.6,text:'Surfacing!',sub:''}}
 function subHi(){if(nearG)greetGiant(nearG);else if(SUB.nm)meet(SUB.nm)}
@@ -2310,7 +2310,7 @@ function frame(now){const rdt=(now-lastT)/1000,dt=Math.min(.05,Math.max(0,rdt));
   else if(cardGiant&&state==='card'){const c=$('cardCv').getContext('2d');c.clearRect(0,0,760,360);giantArt(c,cardGiant,760,360,T)}
   requestAnimationFrame(frame)}
 if(/debug/.test(location.search))window.__H=heightAt;window.__R=renderer;window.__W=water;
-if(/debug/.test(location.search))window.__g={Pl,dinos,friends,setTod:v=>{tod=v},setCam:(y,p,d)=>{camYaw=y;camPitch=p;camDist=d},giants:()=>GIANTS,greet:i=>greetGiant(GIANTS[i]),cam:camera,dbgcam:()=>[camera.position.y,scene.fog.near,scene.fog.far],lights:()=>[DI.light,WX.flash,WX.storm,WX.boltT,sunL.intensity,hemi.intensity,scene.fog.near,scene.fog.far,skyMat.uniforms.cloudA.value,WX.cl,WX.mode],bow:BOW,wx:WX,wxSet:m=>wxSet(m),jeepM:JEEP,balM:BALLOON,veh:VEHS,enterVeh:k=>enterVeh(k),vehBtn:()=>vehButton(),sub:SUB,enterSub:()=>enterSub(),dive:()=>subDive(),go:(x,z)=>{Pl.x=x;Pl.z=z;Pl.y=heightAt(x,z);camera.position.set(x,Pl.y+6,z+8)}};
+if(/debug/.test(location.search))window.__g={Pl,dinos,friends,setTod:v=>{tod=v},setCam:(y,p,d)=>{camYaw=y;camPitch=p;camDist=d},giants:()=>GIANTS,greet:i=>greetGiant(GIANTS[i]),cam:camera,dbgcam:()=>[camera.position.y,scene.fog.near,scene.fog.far],dbgst:()=>[state,VEH,canGo(166,9),canGo(168,9),canWalk(166,9),joy.x,joy.y,camYaw],lights:()=>[DI.light,WX.flash,WX.storm,WX.boltT,sunL.intensity,hemi.intensity,scene.fog.near,scene.fog.far,skyMat.uniforms.cloudA.value,WX.cl,WX.mode],bow:BOW,wx:WX,wxSet:m=>wxSet(m),jeepM:JEEP,balM:BALLOON,veh:VEHS,enterVeh:k=>enterVeh(k),vehBtn:()=>vehButton(),sub:SUB,enterSub:()=>enterSub(),dive:()=>subDive(),go:(x,z)=>{Pl.x=x;Pl.z=z;Pl.y=heightAt(x,z);camera.position.set(x,Pl.y+6,z+8)}};
 resize();if(!renderer){const s=$('glerr');if(s){s.hidden=false}}window.__setup=Math.round(performance.now()-__t0);$('loading').hidden=true;requestAnimationFrame(frame);
 },40);
 </script>
