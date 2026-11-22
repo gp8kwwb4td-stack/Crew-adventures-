@@ -1910,7 +1910,7 @@ GVIEW.meg=99999;GVIEW.livy=99999;
 const _LV=new THREE.Vector3();
 function lodDet(o,root,near){if(!o.det){const ms=[];root.traverse(m=>{if(m.isMesh&&m.geometry&&!m.isInstancedMesh){if(!m.geometry.boundingSphere)m.geometry.computeBoundingSphere();m.getWorldScale(_LV);ms.push([m,m.geometry.boundingSphere.radius*Math.max(_LV.x,_LV.y,_LV.z)])}});ms.sort((a,b)=>b[1]-a[1]);const top=ms.length?ms[0][1]:1;o.det=ms.filter((e,i)=>i>=3&&e[1]<top*.2).map(e=>e[0]);o.detOn=true}
   if(near!==o.detOn){o.detOn=near;o.det.forEach(m=>m.visible=near)}}
-function updateGiants(dt){GIANTS.forEach(g=>{const dd=Math.hypot(g.x-camera.position.x,g.z-camera.position.z);g.g.visible=dd<(GVIEW[g.k]||300);if(g.g.visible&&(GVIEW[g.k]||0)<99999)lodDet(g,g.g,dd<70)});
+function updateGiants(dt){const inRoom=(typeof FARM3!=='undefined'&&FARM3.inside)||(typeof MUSI!=='undefined'&&MUSI.inside);if(inRoom){GIANTS.forEach(g=>{if(g.g)g.g.visible=false});return}GIANTS.forEach(g=>{const dd=Math.hypot(g.x-camera.position.x,g.z-camera.position.z);g.g.visible=dd<(GVIEW[g.k]||300);if(g.g.visible&&(GVIEW[g.k]||0)<99999)lodDet(g,g.g,dd<70)});
   if(state!=='menu2'){updMeg(dt);updKraken(dt);updBloop(dt);updNessie(dt);GIANTS.forEach(g=>{if(g.update)g.update(dt)})}
   if(state==='play'&&MEG.jump==null&&MEG.happy<=0&&!FIGHT.on&&DI.light>.3&&Math.random()<dt*.012)MEG.jump=0}
 // ---------- realism pass: wind, water, sky, flowers, dust ----------
@@ -4865,7 +4865,7 @@ const BAKU2=(()=>{const g=new THREE.Group(),N=96,L=15.6,CX=600,CZ=1250,R=250;
   A.greet=function(){if(this.night()&&this.eat<0){this.startEat();return}this.happy=6;tone(60,2.2,'sawtooth',.11,-10);tone(95,1.8,'sine',.07,30,.3);noise(1.4,.1,0,300);bigSplash(this.x,SEA_LEVEL,this.z,280,10)};
   A.update=function(dt){const s=this;s.t+=dt;s.happy=Math.max(0,s.happy-dt);s.cool-=dt;
     // the moon-eating show
-    if(s.eat<0&&s.cool<=0&&s.night()&&state==='play'&&Math.hypot(Pl.x-CX,Pl.z-CZ)<2600)s.startEat();
+    if(s.eat<0&&s.cool<=0&&s.night()&&state==='play'&&!(typeof FARM3!=='undefined'&&FARM3.inside)&&!(typeof MUSI!=='undefined'&&MUSI.inside)&&Math.hypot(Pl.x-CX,Pl.z-CZ)<2600)s.startEat();
     if(s.eat>=0){const e=s.eat+=dt;s.eatK=e<5?e/5:e<13?1:Math.max(0,1-(e-13)/5);
       if(e>5.4&&s.moonDone===0){s.moonDone=1;banner={t:4,text:'🌑 Bakunawa swallowed the moon!',sub:'It\'s an eclipse! In the old stories people banged pots and pans to make him spit it out.'};noise(.6,.2,0,200);tone(40,1.2,'square',.08,-10)}
       s.ecl=e<5.2?0:e<6.2?(e-5.2):e<12?1:Math.max(0,1-(e-12)*1.5);
@@ -5490,7 +5490,7 @@ const FARM3=(()=>{const OX=-1300,OY=1200,OZ=1700,R=58;FARMR={x0:OX-R-40,x1:OX+R+
     [.8,1.7].forEach(y=>{const r=Bx(L,.22,.15,wood,(x0+x1)/2,y,(z0+z1)/2);r.rotation.y=-Math.atan2(z1-z0,x1-x0)})};
   fence(-R,-26,-R,R-10);fence(R,-26,R,R-10);fence(-R,R-10,-5,R-10);fence(5,R-10,R,R-10);fence(-R,-26,-12,-26);fence(12,-26,R,-26);
   // pond for the swimming babies
-  const PX=32,PZ=20,PR=17;const pond=new THREE.Mesh(new THREE.CircleGeometry(PR,40),new THREE.MeshLambertMaterial({color:0x3a8ac8,emissive:0x0a2a4a}));pond.rotation.x=-Math.PI/2;pond.position.set(PX,.08,PZ);g.add(pond);
+  const PX=31,PZ=21,PR=23;const pond=new THREE.Mesh(new THREE.CircleGeometry(PR,40),new THREE.MeshLambertMaterial({color:0x3a8ac8,emissive:0x0a2a4a}));pond.rotation.x=-Math.PI/2;pond.position.set(PX,.08,PZ);g.add(pond);
   const sand=new THREE.Mesh(new THREE.RingGeometry(PR,PR+1.6,40),M(0xe0c890));sand.rotation.x=-Math.PI/2;sand.position.set(PX,.06,PZ);g.add(sand);
   for(let i=0;i<8;i++){const a=i/8*TAU+.3;Cy(.08,.12,2.2,M(0x4a7a2a),PX+Math.cos(a)*(PR+.6),1.1,PZ+Math.sin(a)*(PR+.6),5)}
   // nests full of straw near the barn
@@ -5498,6 +5498,13 @@ const FARM3=(()=>{const OX=-1300,OY=1200,OZ=1700,R=58;FARMR={x0:OX-R-40,x1:OX+R+
   NP.forEach(([x,z])=>{const n=new THREE.Mesh(new THREE.TorusGeometry(1.5,.6,8,18),strawM);n.rotation.x=-Math.PI/2;n.position.set(x,.4,z);g.add(n);for(let k=0;k<10;k++){const s=Bx(.08,.08,1.2,strawM,x+Math.cos(k)*1.5,.7,z+Math.sin(k)*1.5);s.rotation.y=k}
     const egg=new THREE.Mesh(new THREE.SphereGeometry(.9,16,12),M(0xffffff));egg.scale.y=1.3;egg.position.set(x,1.2,z);egg.visible=false;g.add(egg);
     const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xffd060,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));glow.scale.set(5,5,1);glow.position.set(x,1.4,z);g.add(glow);nestG.push({egg,glow,x,z})});
+  // a wooden pier out to a round feeding platform in the middle of the pond
+  {const plank=M(0xb88a52),post=M(0x7a5232),L=PR+2;for(let i=0;i<Math.ceil(L/1.1);i++){const b=Bx(1,.25,3.2,i%2?plank:M(0xa87a46),PX-PR-1.5+i*1.1+.5,.35,PZ)}
+    [-1.5,1.5].forEach(s=>{for(let x=PX-PR-1;x<PX-4;x+=4){Cy(.15,.15,1.4,post,x,.7,PZ+s,6)}const r=Bx(L-4,.12,.12,post,PX-PR/2-2.5,1.3,PZ+s)});
+    const deck=new THREE.Mesh(new THREE.CylinderGeometry(5,5,.3,24),plank);deck.position.set(PX,.35,PZ);g.add(deck);
+    for(let i=0;i<20;i++){const a=i/20*TAU;if(Math.abs(Math.sin(a))<.3&&Math.cos(a)<0)continue;Cy(.12,.12,1.3,post,PX+Math.cos(a)*4.8,.85,PZ+Math.sin(a)*4.8,6)}
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(4.8,.08,6,40),post);ring.rotation.x=Math.PI/2;ring.position.set(PX,1.45,PZ);g.add(ring);
+    Bx(1.6,.8,1,M(0x6a9a3a),PX+2.6,.85,PZ+2.6);sign('🐟 FEEDING DOCK','Feed your sea babies!',PX,2.8,PZ-4.6,0,4.4)}
   sign('🥚 NESTS','Keep the eggs warm!',-11,3.4,-19.5,0,5);
   // hay bales, a food trough, trees and a windmill
   const hay=M(0xd8b048);[[16,-20],[19,-21],[17.5,-18],[-30,30],[-27,32]].forEach(([x,z],i)=>{const h=Cy(1.2,1.2,2,hay,x,1.2+(i===2?2:0),z,14);h.rotation.z=Math.PI/2});
@@ -5513,7 +5520,9 @@ const FARM3=(()=>{const OX=-1300,OY=1200,OZ=1700,R=58;FARMR={x0:OX-R-40,x1:OX+R+
   const fade=document.createElement('div');fade.style.cssText='position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .35s;z-index:50';document.body.appendChild(fade);
   const S={g,inside:false,cool:0,OX,OY,OZ,R,PX,PZ,PR,NP,nestG,blocks,fade,blades,babies:[],near:null,nearNest:-1};
   S.walk=(x,z)=>{const lx=x-OX,lz=z-OZ;if(Math.abs(lx)>R+30||lz<-R-20||lz>R+6)return false;
-    for(const b of blocks)if(Math.hypot(lx-b[0],lz-b[1])<b[2])return false;
+    // the wooden pier and round platform in the middle of the pond are safe to walk on
+    const onPier=(Math.abs(lz-PZ)<1.6&&lx>PX-PR-3&&lx<PX)||Math.hypot(lx-PX,lz-PZ)<5.2;
+    for(const b of blocks){if(onPier&&b[0]===PX&&b[1]===PZ)continue;if(Math.hypot(lx-b[0],lz-b[1])<b[2])return false}
     // fence lines (you can only go in and out through the gate)
     const onFence=(Math.abs(Math.abs(lx)-R)<.9&&lz>-26&&lz<R-10)||(Math.abs(lz-(R-10))<.9&&Math.abs(lx)<R&&Math.abs(lx)>5)||(Math.abs(lz+26)<.9&&Math.abs(lx)<R&&Math.abs(lx)>12);return !onFence};
   return S})();
@@ -5528,21 +5537,22 @@ function farmBabyMesh(k,grown){const W=new THREE.Group();let o=null;
   return{W,o}}
 function farmSyncBabies(){const S=FARM3,F=save.farm;
   // rebuild a baby when it grows up, remove extras
-  S.babies=S.babies.filter((B,i)=>{const ok=F.pen[i]===B.ref&&B.grown===((B.ref.food||0)>=GROWN);if(!ok)S.g.remove(B.W);return ok});
-  while(S.babies.length<F.pen.length){const i=S.babies.length,ref=F.pen[i],grown=(ref.food||0)>=GROWN,m=farmBabyMesh(ref.k,grown),sw=!!SWIM[ref.k];
-    const a=Math.random()*TAU,r=Math.random();let x=sw?S.PX+Math.cos(a)*r*(S.PR-3):rnd(-40,40),z=sw?S.PZ+Math.sin(a)*r*(S.PR-3):rnd(-4,40);
-    if(!sw&&Math.hypot(x-S.PX,z-S.PZ)<S.PR+3)x=-x;m.W.position.set(x,0,z);S.g.add(m.W);S.babies.push({ref,k:ref.k,W:m.W,o:m.o,grown,sw,x,z,h:Math.random()*TAU,t:Math.random()*9,ph:0,tx:x,tz:z,wait:rnd(0,3),happy:0,len:m.W.userData.len})}}
-function farmBabySize(B){const f=Math.min(B.ref.food||0,GROWN),want=B.sw?(B.grown?8:3.2+f*.9):(B.grown?6:2.4+f*.6);return want/(B.len||3)}
+  S.babies=S.babies.filter(B=>{const ok=F.pen.includes(B.ref)&&B.grown===((B.ref.food||0)>=GROWN);if(!ok){S.g.remove(B.W);if(F.pen.includes(B.ref))(S.keep=S.keep||new Map()).set(B.ref,{x:B.x,z:B.z,h:B.h})}return ok});
+  const have=new Set(S.babies.map(B=>B.ref)),todo=F.pen.filter(r=>!have.has(r));
+  for(const ref of todo){const grown=(ref.food||0)>=GROWN,m=farmBabyMesh(ref.k,grown),sw=!!SWIM[ref.k];
+    const a=Math.random()*TAU,r=Math.random();let x=sw?S.PX+Math.cos(a)*(7+r*(S.PR-10)):rnd(-40,40),z=sw?S.PZ+Math.sin(a)*(7+r*(S.PR-10)):rnd(-4,40);
+    if(!sw&&Math.hypot(x-S.PX,z-S.PZ)<S.PR+3)x=-x;const kp=S.keep&&S.keep.get(ref);if(kp){x=kp.x;z=kp.z;S.keep.delete(ref)}m.W.position.set(x,0,z);S.g.add(m.W);S.babies.push({ref,k:ref.k,W:m.W,o:m.o,grown,sw,x,z,h:Math.random()*TAU,t:Math.random()*9,ph:0,tx:x,tz:z,wait:rnd(0,3),happy:0,len:m.W.userData.len})}}
+function farmBabySize(B){const f=Math.min(B.ref.food||0,GROWN),want=B.sw?(B.grown?5:2+f*.5):(B.grown?3.6:1.5+f*.35);return want/(B.len||3)}
 function updateFarm3(dt){const S=FARM3;S.g.visible=S.inside;if(!S.inside)return;S.blades.rotation.z+=dt*.8;
   // eggs in the nests glow as they get closer to hatching
   const F=save.farm;fillNests();S.nestG.forEach((N,i)=>{const n=F.nests[i];N.egg.visible=!!n;if(!n){N.glow.material.opacity=0;return}const c=(typeof EGGC!=='undefined'&&EGGC[n.k])||['#f4ead2','#8a7a5a'];N.egg.material.color.set(c[0]);
     const p=farmProg(n);N.egg.rotation.z=p>.75?Math.sin(T*18)*.12*p:0;N.glow.material.opacity=.15+.6*p;N.glow.scale.setScalar(4+p*3);
     if(p>=1)farmHatch(i)});
   farmSyncBabies();
-  S.babies.forEach(B=>{B.t+=dt;B.happy=Math.max(0,B.happy-dt);B.wait-=dt;
-    if(B.wait<=0){B.wait=rnd(2,6);if(B.sw){const a=Math.random()*TAU,r=Math.random()*(S.PR-3);B.tx=S.PX+Math.cos(a)*r;B.tz=S.PZ+Math.sin(a)*r}else{B.tx=rnd(-48,48);B.tz=rnd(-6,42);if(Math.hypot(B.tx-S.PX,B.tz-S.PZ)<S.PR+3)B.tx=-B.tx}}
+  S.babies.forEach(B=>{B.t+=dt;B.happy=Math.max(0,B.happy-dt);B.stay=Math.max(0,(B.stay||0)-dt);B.wait-=dt;if(B.stay>0){B.tx=B.x;B.tz=B.z;B.wait=Math.max(B.wait,.5)}
+    if(B.wait<=0){B.wait=rnd(4,9);if(B.sw){const onDock=Math.hypot(Pl.x-S.OX-S.PX,Pl.z-S.OZ-S.PZ)<6,a=Math.random()*TAU,r=onDock?6.5+Math.random()*3.5:7+Math.random()*(S.PR-10);B.tx=S.PX+Math.cos(a)*r;B.tz=S.PZ+Math.sin(a)*r}else{B.tx=rnd(-48,48);B.tz=rnd(-6,42);if(Math.hypot(B.tx-S.PX,B.tz-S.PZ)<S.PR+3)B.tx=-B.tx}}
     const dx=B.tx-B.x,dz=B.tz-B.z,d=Math.hypot(dx,dz),moving=d>.6&&B.happy<=0;
-    if(moving){const th=Math.atan2(-dz,dx);B.h+=angDiff(B.h,th)*Math.min(1,dt*3);const sp=(B.sw?2.4:2.8)*(B.grown?1.6:1);const nx=B.x+Math.cos(B.h)*sp*dt,nz=B.z-Math.sin(B.h)*sp*dt;if(!B.sw&&Math.hypot(nx-S.PX,nz-S.PZ)<S.PR+2.5){B.wait=0;B.tx=B.x-(S.PX-B.x);B.tz=B.z-(S.PZ-B.z)}else{B.x=nx;B.z=nz}B.ph+=sp*dt*.18}
+    if(moving){const th=Math.atan2(-dz,dx);B.h+=angDiff(B.h,th)*Math.min(1,dt*3);const sp=(B.sw?1.3:1.8)*(B.grown?1.3:1);const nx=B.x+Math.cos(B.h)*sp*dt,nz=B.z-Math.sin(B.h)*sp*dt;if(!B.sw&&Math.hypot(nx-S.PX,nz-S.PZ)<S.PR+2.5){B.wait=0;B.tx=B.x-(S.PX-B.x);B.tz=B.z-(S.PZ-B.z)}else{B.x=nx;B.z=nz}B.ph+=sp*dt*.18}
     // measure the creature's real size once (after its first pose), so every dino fits nicely on the farm
     if(!B.meas){B.meas=1;try{if(B.o)poseDino3(B.o,{t:0,ph:null,sl:0,g:0,look:false,lookYaw:0,roar:false})}catch(e){}B.W.scale.setScalar(1);B.W.rotation.set(0,0,0);B.W.position.set(0,0,0);B.W.updateMatrixWorld(true);
       const bx=new THREE.Box3(),sz=new THREE.Vector3(),inv=new THREE.Matrix4().copy(B.W.matrixWorld).invert();B.W.traverse(o=>{if(o.isMesh&&o.geometry){o.geometry.computeBoundingBox&&!o.geometry.boundingBox&&o.geometry.computeBoundingBox();const base=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld);if(o.isInstancedMesh){const im=new THREE.Matrix4();for(let q=0;q<o.count;q++){o.getMatrixAt(q,im);const e=im.elements;if(Math.abs(e[0])+Math.abs(e[5])+Math.abs(e[10])<1e-6)continue;bx.union(o.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(base,im)))}}else bx.union(o.geometry.boundingBox.clone().applyMatrix4(base))}});
@@ -5550,11 +5560,14 @@ function updateFarm3(dt){const S=FARM3;S.g.visible=S.inside;if(!S.inside)return;
       // copies of the giants: move them so they sit right in the middle, on the ground
       const I=B.W.userData.inner;if(I&&isFinite(bx.min.y)){const cn=new THREE.Vector3();bx.getCenter(cn);I.position.x-=cn.x;I.position.z-=cn.z;I.position.y-=bx.min.y}B.h3=sz.y}
     const sc=farmBabySize(B);B.W.scale.setScalar(sc);B.W.position.set(B.x,B.sw?-(B.h3||1)*sc*.15:(B.happy>0?Math.abs(Math.sin(B.t*10))*.6:0),B.z);B.W.rotation.y=B.h;
-    if(B.o&&B.W.visible)try{poseDino3(B.o,{t:B.t,ph:moving?B.ph:null,sl:0,g:0,look:false,lookYaw:0,roar:B.happy>0})}catch(e){}});
+    // never block the camera: creatures right in front of the camera go see-through-invisible, and they step out of your way
+    {const cdx=S.OX+B.x-camera.position.x,cdz=S.OZ+B.z-camera.position.z,cdy=S.OY+B.W.position.y+sc*(B.h3||1)*.5-camera.position.y,cd=Math.hypot(cdx,cdy,cdz),lim=1.5+sc*(B.len||3)*.4;B.vis=B.vis==null?true:B.vis;if(B.vis&&cd<lim)B.vis=false;else if(!B.vis&&cd>lim+2)B.vis=true;B.W.visible=B.vis;
+     const pdx=B.x-(Pl.x-S.OX),pdz=B.z-(Pl.z-S.OZ),pd=Math.hypot(pdx,pdz);if(pd<2.5&&B.happy<=0&&!B.sw){B.x+=pdx/(pd||1)*dt*3;B.z+=pdz/(pd||1)*dt*3}}
+    if(B.o&&B.W.visible&&(Math.hypot(S.OX+B.x-camera.position.x,S.OZ+B.z-camera.position.z)<35||((S.fr=(S.fr||0)+1)&1)))try{poseDino3(B.o,{t:B.t,ph:moving?B.ph:null,sl:0,g:0,look:false,lookYaw:0,roar:B.happy>0})}catch(e){}});
   // what's nearby: a nest egg or a baby to feed
   const lx=Pl.x-S.OX,lz=Pl.z-S.OZ;S.nearNest=-1;S.near=null;let best=5.5;
   S.NP.forEach(([x,z],i)=>{const dd=Math.hypot(lx-x,lz-z);if(F.nests[i]&&dd<4.6)S.nearNest=i});
-  if(S.nearNest<0)S.babies.forEach(B=>{const dd=Math.hypot(lx-B.x,lz-B.z)-(B.grown?3:1);if(dd<best){best=dd;S.near=B}});
+  if(S.nearNest<0){const sc=B=>Math.hypot(lx-B.x,lz-B.z)-(B.grown?3:1)-(B.sw?2.5:0);if(S.last&&S.babies.includes(S.last)&&sc(S.last)<best+1.5)S.near=S.last;else S.babies.forEach(B=>{const dd=sc(B);if(dd<best){best=dd;S.near=B}});S.last=S.near}
   const zn=$('zName');if(zn&&zn.textContent!=='🏡 Dino Farm')zn.textContent='🏡 Dino Farm'}
 function farmName(k){return (typeof DSHORT!=='undefined'&&DSHORT[k])||(GINFO[k]&&GINFO[k].name)||k}
 function farmHatch(i){const F=save.farm,n=F.nests[i];if(!n)return;F.nests.splice(i,1);F.pen.push({k:n.k,food:0});fillNests();persist();
@@ -5563,7 +5576,7 @@ function farmHatch(i){const F=save.farm,n=F.nests[i];if(!n)return;F.nests.splice
   const B=FARM3.babies[FARM3.babies.length-1];if(B&&!B.sw){B.x=N.x;B.z=N.z+3;B.happy=1.5}}
 function farmWarm(){const S=FARM3,i=S.nearNest,n=save.farm.nests[i];if(!n)return;n.taps=(n.taps||0)+2;persist();const N=S.nestG[i];sparkle(S.OX+N.x,S.OY+1.6,S.OZ+N.z,10,0xffd060);
   tone(600+farmProg(n)*500,.12,'triangle',.05);const p=Math.round(farmProg(n)*100);banner={t:1.4,text:'🥚 Keeping the egg warm...',sub:p+'% ready to hatch'};if(farmProg(n)>=1)farmHatch(i)}
-function farmFeed(){const B=FARM3.near;if(!B)return;const r=B.ref;B.happy=1.6;B.tx=B.x;B.tz=B.z;
+function farmFeed(){const B=FARM3.near;if(!B)return;const r=B.ref;B.happy=1.6;B.stay=10;B.tx=B.x;B.tz=B.z;
   if((r.food||0)>=GROWN){banner={t:1.6,text:'❤️ '+farmName(B.k)+' is happy!',sub:'It is all grown up already'};tone(880,.15,'triangle',.05);return}
   r.food=(r.food||0)+1;persist();sparkle(FARM3.OX+B.x,FARM3.OY+2,FARM3.OZ+B.z,10,0xff6a8a);tone(700+Math.random()*300,.12,'triangle',.06);tone(900+Math.random()*300,.12,'triangle',.05,0,.1);
   const food=(typeof FOODNAME!=='undefined'&&FOODNAME[DIET[B.k]])||'food';
